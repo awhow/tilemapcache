@@ -9,10 +9,11 @@ chrono = "0.4"
 clap = { version = "4.6.6", features = ["derive"] }
 directories = "6.0.0"
 open = "5.4.2"
-reqwest = { version = "0.12", features = ["blocking", "rustls-tls"] }
+reqwest = { version = "0.12", features = ["rustls-tls"] }
 rusqlite = { version = "0.32", features = ["bundled"] }
 strfmt = "0.2.5"
 thiserror = "2.0.20"
+tokio = { version = "1.52.3", features = ["full"] }
 
 [lints.clippy]
 pedantic = { level = "deny", priority = -1 }

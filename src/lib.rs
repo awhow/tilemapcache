@@ -2,7 +2,7 @@ use std::path::Path;
 use std::{collections::HashMap, fs};
 
 use chrono::{Duration, NaiveDateTime, Utc};
-use reqwest::blocking::Client;
+use reqwest::Client;
 use rusqlite::{Connection, params};
 use thiserror::Error;
 
@@ -115,7 +115,7 @@ impl TileMapCache {
         Ok(Self { db, source, ttl })
     }
 
-    pub fn fetch_tile(
+    pub async fn fetch_tile(
         &self,
         client: &Client,
         x: u32,
@@ -126,14 +126,14 @@ impl TileMapCache {
             return Ok(data);
         }
 
-        let response = client.get(&self.url(x, y, zoom)?).send()?;
+        let response = client.get(&self.url(x, y, zoom)?).send().await?;
 
         let status = response.status();
         if !status.is_success() {
             return Err(TileMapError::HttpStatus { status, zoom, x, y });
         }
 
-        let data = response.bytes()?.to_vec();
+        let data = response.bytes().await?.to_vec();
         if data.is_empty() {
             return Err(TileMapError::EmptyTile);
         }

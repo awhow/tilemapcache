@@ -4,7 +4,7 @@ use anyhow::Context;
 use chrono::Duration;
 use clap::{Args, Parser, Subcommand};
 use directories::ProjectDirs;
-use reqwest::blocking::Client;
+use reqwest::Client;
 
 use tilemapcache::{TileMapCache, TileMapSource};
 
@@ -78,7 +78,8 @@ struct ShowArgs {
     z: u8,
 }
 
-fn main() -> Result<(), anyhow::Error> {
+#[tokio::main]
+async fn main() -> Result<(), anyhow::Error> {
     let cli = Cli::parse();
 
     let source = TileMapSource {
@@ -91,9 +92,9 @@ fn main() -> Result<(), anyhow::Error> {
     let cache = TileMapCache::open(cli.cache, source, Duration::days(30))?;
 
     match cli.command {
-        Command::Fetch(args) => fetch(&cache, args),
+        Command::Fetch(args) => fetch(&cache, args).await,
         Command::List => list(&cache),
-        Command::Show(args) => show(&cache, &args),
+        Command::Show(args) => show(&cache, &args).await,
         Command::Path => {
             path(&cache);
             Ok(())
@@ -101,13 +102,13 @@ fn main() -> Result<(), anyhow::Error> {
     }
 }
 
-fn fetch(cache: &TileMapCache, args: FetchArgs) -> Result<(), anyhow::Error> {
+async fn fetch(cache: &TileMapCache, args: FetchArgs) -> Result<(), anyhow::Error> {
     let client = Client::builder()
         .user_agent(USER_AGENT)
         .build()
         .context("creating HTTP client")?;
 
-    let data = cache.fetch_tile(&client, args.x, args.y, args.z)?;
+    let data = cache.fetch_tile(&client, args.x, args.y, args.z).await?;
 
     if let Some(output) = args.output {
         std::fs::write(&output, &data).with_context(|| format!("writing {output}"))?;
@@ -137,7 +138,7 @@ fn list(cache: &TileMapCache) -> Result<(), anyhow::Error> {
     Ok(())
 }
 
-fn show(cache: &TileMapCache, args: &ShowArgs) -> Result<(), anyhow::Error> {
+async fn show(cache: &TileMapCache, args: &ShowArgs) -> Result<(), anyhow::Error> {
     let data = if let Some(data) = cache.get(args.x, args.y, args.z)? {
         data
     } else {
@@ -149,7 +150,8 @@ fn show(cache: &TileMapCache, args: &ShowArgs) -> Result<(), anyhow::Error> {
                 z: args.z,
                 output: None,
             },
-        )?;
+        )
+        .await?;
 
         cache.get(args.x, args.y, args.z)?.with_context(|| {
             format!(
