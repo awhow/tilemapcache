@@ -39,7 +39,7 @@ pub enum TileMapError {
 }
 
 /// Defines a tile map source used to retrieve and cache map tiles.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TileMapSource {
     /// Name used to identify this tile source in the `TileMapBase` cache.
     pub name: String,
@@ -58,6 +58,7 @@ pub struct TileMapSource {
 ///
 /// Tiles are stored using the TileMapBase-compatible cache format, with
 /// each tile identified by its source name and tile coordinates.
+#[derive(Debug)]
 pub struct TileMapCache {
     pub db: Connection,
     pub source: TileMapSource,
